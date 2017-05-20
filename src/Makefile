@@ -1,4 +1,4 @@
 CC=g++
 
 test: main.o
-	$(CC) -o danielGame main.o -lsfml-graphics -lsfml-window -lsfml-system
+	$(CC) -o DecouyonGame main.o -lsfml-graphics -lsfml-window -lsfml-system
