@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -21,6 +22,7 @@ struct ActiveDirection {
 
 class Object {
 
+protected:
     Position objectPosition;
 
 public:
@@ -47,9 +49,12 @@ class Player : public Object, public sf::Drawable {
     sf::Vector2i playerTexturePosition;
 
 
+    friend class Game;
+
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
         target.draw(playerSprite, states);
     }
+
 
 public:
 
@@ -59,9 +64,9 @@ Player() {
     this->deactiveMovementDirection(1);
     this->deactiveMovementDirection(2);
     this->deactiveMovementDirection(3);
-    this->setObjectPosition(10 ,10);
+    this->setObjectPosition(50 ,10);
     this->playerSprite.setPosition( getObjectPosition().x, getObjectPosition().y );
-    this->playerSpeed = 0.008;
+    this->playerSpeed = 1;
     this->playerTexturePosition.x = 1;
     this->playerTexturePosition.y = 0;
     playerTexture.loadFromFile("data/textures/player.png");
@@ -108,20 +113,27 @@ Player() {
 
     float getPlayerSpeed() { return this->playerSpeed; }
 
-    void updatePlayerMovement() {
 
-        if(this->playerMovement.down == 1)
-            this->movePlayer(0);
-        if(this->playerMovement.left == 1)
-            this->movePlayer(1);
-        if(this->playerMovement.right == 1)
-            this->movePlayer(2);
-        if(this->playerMovement.up == 1)
-            this->movePlayer(3);
+    Position getFuturePlayerPosition(int moveDirection) {
+
+        Position temp = this->getObjectPosition();
+
+        if(moveDirection == 0) 
+            temp.y += playerSpeed;
+
+        else if(moveDirection == 1)
+            temp.x -= playerSpeed;
+
+        else if(moveDirection == 2) 
+            temp.x +=playerSpeed;
+
+        else if(moveDirection == 3) 
+            temp.y -= playerSpeed;  
+
+        return temp;
     }
 
     void movePlayer(int moveDirection) {
-        //sparawdzam czy moge tu sie ruszyc
 
         if(moveDirection == 0) {
             this->playerTexturePosition.y = 0;
@@ -130,7 +142,6 @@ Player() {
                 this->playerTexturePosition.x = 0;
 
             playerSprite.setTextureRect(sf::IntRect(playerTexturePosition.x * 32, playerTexturePosition.y * 32, 32, 32));
-
 
             Position currentPosition = this->getObjectPosition();
             this->setPlayerPosition( currentPosition.x, currentPosition.y += playerSpeed );
@@ -179,6 +190,136 @@ Player() {
 };
 
 
+
+
+class Obstacle : public Object {
+
+    int textureNumber;
+    
+public:
+
+    Obstacle(int textureNumber) { this->textureNumber = textureNumber; }
+
+    void setObstacleTextureNumber(int textureNumber) { this->textureNumber = textureNumber; }
+
+    int getObstacleTextureNumber() { return this->textureNumber; }
+
+    bool checkPosition(Position position) {
+
+        if(position.x +32 >= this->objectPosition.x && position.x <= this->objectPosition.x + 32
+           &&
+           position.y + 32 >= this->objectPosition.y && position.y <= this->objectPosition.y + 32)
+            return true; //dokladniejsze wykrywanie kolizji
+        else
+            return false;
+    }
+
+};
+
+
+
+
+
+class Obstacles : public sf::Drawable {
+
+    vector <Obstacle> obstaclesVector;
+    int obstaclesCount;
+    sf::VertexArray obstaclesVertices;
+    sf::Texture obstaclesTexture;
+
+    //ta funkcja konieczna, znaleziona w tutorialach do sfmla
+    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
+        states.texture = &obstaclesTexture;
+        target.draw(obstaclesVertices, states);
+    }
+
+public:
+
+    Obstacle* getObstacleOnPosition(Position position) {
+
+        for(size_t i = 0; i < obstaclesVector.size(); ++i)
+            if(obstaclesVector[i].checkPosition(position))
+                return &obstaclesVector[i];
+
+        return NULL;
+
+
+    }
+
+void loadObstacles(string fileObstacles, string fileTextureObstcles, sf::Vector2u textureSize) {
+
+    //otwieramy nasz plik z danymi do mapy
+    FILE* obstacleFile;
+    obstacleFile = fopen(("data/" + fileObstacles).c_str(), "r");
+
+    //wczytaj z pliku ilosci obiektow
+    fscanf(obstacleFile, "%d ", &obstaclesCount);
+    
+    //wczytujemy texture naszych przeszkod
+    obstaclesTexture.loadFromFile("data/textures/" + fileTextureObstcles);
+
+    //ustawiamy nasza kolekcje wierzcholkow
+    obstaclesVertices.setPrimitiveType(sf::Quads);
+    obstaclesVertices.resize(obstaclesCount * 4);
+
+    //tworzymy nasza macierz kafelkow o odpowiednim rozmiarze
+  //  tileMatrix = new unsigned int [mapWidth * mapHeight];
+
+    //wczytujemy do vectora przeszkod nasze przeszkody
+        Position tempPosition;
+        int tempInt;
+        Obstacle tempObstacle(-1);
+
+
+    for(size_t i = 0; i < obstaclesCount; ++i) {
+        fscanf(obstacleFile, "%d %f %f", &tempInt, &tempPosition.x, &tempPosition.y);
+        tempObstacle.setObstacleTextureNumber(tempInt);
+        tempObstacle.setObjectPosition(tempPosition.x, tempPosition.y);
+
+        obstaclesVector.push_back(tempObstacle);
+    }
+
+        
+
+    
+    for (size_t i = 0; i < obstaclesVector.size(); ++i) {
+
+            //pobieramy numer textury danej przeszkody
+            int textureNumber = obstaclesVector[i].getObstacleTextureNumber();
+
+            //znajdujemy teksture tej kafelki w zestawie tekstur
+            int tu = textureNumber % (obstaclesTexture.getSize().x / textureSize.x);
+            int tv = textureNumber / (obstaclesTexture.getSize().x / textureSize.x);
+
+            // pobieramy adres koljenego kwadratu mapy
+            sf::Vertex* quad = &obstaclesVertices[i * 4];
+
+            //ustawiamy pozycje wierzcholkow naszych kwadratowych przeszkod
+            quad[0].position = sf::Vector2f(obstaclesVector[i].getObjectPosition().x, obstaclesVector[i].getObjectPosition().y);
+            quad[1].position = sf::Vector2f(obstaclesVector[i].getObjectPosition().x + textureSize.x, obstaclesVector[i].getObjectPosition().y);
+            quad[2].position = sf::Vector2f(obstaclesVector[i].getObjectPosition().x + textureSize.x, obstaclesVector[i].getObjectPosition().y + textureSize.y);
+            quad[3].position = sf::Vector2f(obstaclesVector[i].getObjectPosition().x, obstaclesVector[i].getObjectPosition().y + textureSize.y);
+
+            //ustawiamy pozycje ich textur
+            quad[0].texCoords = sf::Vector2f(tu * textureSize.x, tv * textureSize.y);
+            quad[1].texCoords = sf::Vector2f((tu + 1) * textureSize.x, tv * textureSize.y);
+            quad[2].texCoords = sf::Vector2f((tu + 1) * textureSize.x, (tv + 1) * textureSize.y);
+            quad[3].texCoords = sf::Vector2f(tu * textureSize.x, (tv + 1) * textureSize.y);
+        }
+
+
+        fclose(obstacleFile);
+
+    }
+
+    
+
+};
+
+
+
+
+
 class Map : public sf::Drawable { 
 
     unsigned int mapHeight, mapWidth;
@@ -214,7 +355,7 @@ void loadMap(string fileMap, string fileTextureMap, sf::Vector2u tileSize) {
     tileMatrix = new unsigned int [mapWidth * mapHeight];
 
     //wczytujemy do tej macierzy dane z pliku
-    for(size_t i = 0; i < mapWidth * mapHeight; i++)
+    for(size_t i = 0; i < mapWidth * mapHeight; ++i)
         fscanf(mapFile, "%d ", &tileMatrix[i]);
 
     
@@ -244,6 +385,7 @@ void loadMap(string fileMap, string fileTextureMap, sf::Vector2u tileSize) {
             quad[3].texCoords = sf::Vector2f(tu * tileSize.x, (tv + 1) * tileSize.y);
         }
 
+        fclose(mapFile);
 
     }
 
@@ -251,31 +393,78 @@ void loadMap(string fileMap, string fileTextureMap, sf::Vector2u tileSize) {
 
 
 
+class Game {
 
-
-
-
-
-int main()
-{
     Player player;
     enum playerMove { Down, Left, Right, Up };
 
-
-    sf::RenderWindow window(sf::VideoMode(200, 200), "Decouyon Game");
+    sf::RenderWindow window;
     sf::View myView;
-
-    myView.setCenter(player.getObjectPosition().x +16, player.getObjectPosition().y +16);
-    myView.setSize(200, 200);
-
-    window.setView(myView);
-    
-
-
-
     Map mojaMapa;
-    mojaMapa.loadMap("mapDecuyon", "mapDecuyon.png", sf::Vector2u(32, 32));
+    Obstacles mojePrzeszkody;
 
+
+public:
+
+    Game() {
+
+
+        window.create(sf::VideoMode(200, 200), "Decouyon Game");
+        window.setFramerateLimit(59);
+        window.setView(myView);
+
+        myView.setCenter(player.getObjectPosition().x +16, player.getObjectPosition().y +16);
+        myView.setSize(200, 200);
+
+        mojaMapa.loadMap("mapDecuyon", "mapDecuyon.png", sf::Vector2u(32, 32));
+        mojePrzeszkody.loadObstacles("obstaclesDecuyon", "obstaclesDecuyon.png", sf::Vector2u(32, 32));
+    }
+
+
+
+void update() {
+
+        //aktualizujemy pozycje gracza
+        if(player.playerMovement.down == 1) {
+            Position futurePlayerPosition = player.getFuturePlayerPosition(0);
+            Obstacle* temp = mojePrzeszkody.getObstacleOnPosition(futurePlayerPosition);
+
+            if(temp == NULL) {
+                player.movePlayer(0);
+            }
+        }
+
+        if(player.playerMovement.left == 1) {
+            Position futurePlayerPosition = player.getFuturePlayerPosition(1);
+            Obstacle* temp = mojePrzeszkody.getObstacleOnPosition(futurePlayerPosition);
+
+            if(temp == NULL) {
+                player.movePlayer(1);
+            }
+        }
+
+        if(player.playerMovement.right == 1) {
+            Position futurePlayerPosition = player.getFuturePlayerPosition(2);
+            Obstacle* temp = mojePrzeszkody.getObstacleOnPosition(futurePlayerPosition);
+
+            if(temp == NULL) {
+                player.movePlayer(2);
+            }
+        }
+
+        if(player.playerMovement.up == 1) {
+            Position futurePlayerPosition = player.getFuturePlayerPosition(3);
+            Obstacle* temp = mojePrzeszkody.getObstacleOnPosition(futurePlayerPosition);
+
+            if(temp == NULL) {
+                player.movePlayer(3);
+            }
+        }
+
+        myView.setCenter(player.getObjectPosition().x +16, player.getObjectPosition().y +16);
+}
+
+void runGame() {
 
 
     while(window.isOpen())
@@ -323,21 +512,43 @@ int main()
 
         window.clear();
         
+        update();
+
         window.setView(myView);
-
-
         window.draw(mojaMapa);
-
-
-
-        player.updatePlayerMovement();
+        window.draw(mojePrzeszkody);
         window.draw(player);
-
-        myView.setCenter(player.getObjectPosition().x +16, player.getObjectPosition().y +16);
 
 
         window.display();
     }
 
+
+
+
+}
+
+
+
+
+
+
+
+};
+
+
+
+
+int main()
+{
+ 
+    Game mojaGra;
+    mojaGra.runGame();
+
+
+
+
     return 0;
 }
+
+
