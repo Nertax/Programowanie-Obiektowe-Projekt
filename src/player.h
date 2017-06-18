@@ -10,12 +10,18 @@ class Player : public Object, public sf::Drawable {
 
     int playerHP;
     float playerSpeed;
+    float playerAttackRange;
+    int playerStr;
     ActiveDirection playerMovement;
+    bool attackFlag;
     sf::Sprite playerSprite;
     sf::Texture playerTexture;
     sf::Vector2u playerTexturePosition;
     sf::Clock moveAnimationClock;
     sf::Time lastMoveAnimationFrame;
+    sf::Time lastAttackTime;
+    sf::Time attackCooldown;
+
 
 
     friend class Game;

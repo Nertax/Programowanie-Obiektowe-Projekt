@@ -9,8 +9,13 @@ Player::Player() {
     this->setObjectPosition(50 ,10);
     this->playerSprite.setPosition( getObjectPosition().x, getObjectPosition().y );
     this->playerSpeed = 100;
+    this->playerAttackRange = 10;
+    this->playerStr = 7;
     this->playerTexturePosition.x = 1;
     this->playerTexturePosition.y = 0;
+    this->attackFlag = 0;
+    this->lastAttackTime = sf::seconds(0);
+    this->attackCooldown = sf::seconds(0.4);
     playerTexture.loadFromFile("data/textures/player.png");
     playerSprite.setTexture(playerTexture);
     playerSprite.setTextureRect(sf::IntRect(playerTexturePosition.x * 32, playerTexturePosition.y * 32, 32, 32));

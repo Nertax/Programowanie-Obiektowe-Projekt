@@ -2,6 +2,7 @@
 #include "player.h"
 #include "map.h"
 #include "obstacle.h"
+#include "enemy.h"
 
 #ifndef GAME
 #define GAME
@@ -9,6 +10,9 @@
 class Game {
 
     sf::Clock frameClock;
+    sf::Clock mainClock;
+
+
     Player player;
     enum playerMove { Down, Left, Right, Up };
 
@@ -16,7 +20,7 @@ class Game {
     sf::View myView;
     Map mojaMapa;
     Obstacles mojePrzeszkody;
-
+    Monsters potwory;
 
 public:
 
