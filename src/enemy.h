@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include "main.h"
+#include "player.h"
 #include <vector>
 #include <string>
 
@@ -19,13 +20,16 @@ protected:
     bool deadFlag;
     sf::Time deathTime;
     Position startPosition;
-   // ActiveDirection playerMovement;
     sf::Sprite enemySprite;
-  //  sf::Vector2u playerTexturePosition;
+
 public:
 
+    //wykrywanie kolizji miedzy graczze a potowrem
     bool checkPosition(Position position);
+
+    //ustawia potwora na zadanej pozycji (oraz jego teksture)
     void setEnemyPosition(float newXPosition, float newYPosition);
+
     void setEnemyStartPosition(float newXPosition, float newYPosition) { this->startPosition.x = newXPosition; this->startPosition.y = newYPosition; }
     void setEnemyHP(int newHP) { this->enemyHP = newHP; }
     int getEnemyStartHP() { return this->enemyStartHP; }
@@ -52,52 +56,37 @@ public:
 
 };
 
-#endif
+
 
 class Monsters {
 
     vector <Ogr> ogrs;
     sf::Time ogrRespawnTime;
     sf::Texture ogrTexture;
+    int ogrExp;
 
 public:
 
+    Monsters() { this->ogrExp = 50; }
+
+    //przeszukuje vector ogrow i sprawdza czy jest jakis na zadanej pozycji, jesli tak to zwraca go, jesli nie to zwraca NULL
     Enemy* getMonsterOnPosition(Position position);
+
+    //funkcja zwaraca pierwszego w pamieci potwora ktory jest w zasiegu ataku
     Enemy* getMonsterOnAtackArea(Position playerPosition, int attackDirection, float atackRange);
+
+    //funkcja wczytuje potowry z pliku oraz wczytuje ich teksture
     void loadOgrs(string fileOgrsPosition, string fileTextureOgr);
+
+    //funkcja rysujaca zywe ogry
     void drawOgrs(sf::RenderWindow& window);
-    void updateDeadMonsters(sf::Time mainClockTime);
+
+    //funkcja aktualizuje potwory - usmierca te co maja < 0 HP, daje exp dla gracza za zabicie potowra, respawnuje potwory
+    void updateDeadMonsters(sf::Time mainClockTime, Player& player);
+
+    //funkcja rysujaca nad potoworami ich paski HP
+    void drawMonstersHP(sf::RenderWindow& window);
 
 };
 
-/*
-
-levelowanie
-
-animacje walki
-atakowanie gracza przez moby
-smierc gracza
-poruszanie sie potworow - algorytm ruchu, animacja ruchu jak u gracza
-................
-w update:
-czy ustawiony punkt koncowy, 
-jesli tak
-    przestaw mobka - zrob krok tak jak w player.move
-jesli nie
-    czy zmienna czasowa danego moba nakazuje juz mu sie ruszyc, 
-        jesli nie, to nic nie rob
-        jesli tak to losujemy kierunek poruszania, oraz odleglosc i wyznaczamy na tej podstawie punkt koncowy
-..................
-
-komentarze w kodzie zrobic
-
-dokumentacja:
-bardziej robudowany opis niz na gitgubie - co to jest, na czy polega gra, jak sie poruszac itd - funkcja projektu i instrukcja obslugi programu
-co udalo sie zroic a czego juz nie zdazylem
-
-przy uzyciu czego pisana
-instrukcja instalacji biblioteki
-opis jakie klasy sa i opis co maja i za co sa odpowiedzialne
-hierarchia klas
-info o komentarzach w kodzie
-*/
+#endif

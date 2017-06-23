@@ -17,16 +17,18 @@ void Ogr::setSpriteTexture(sf::Texture& ogrTexture) {
     this->enemySprite.setPosition( getObjectPosition().x, getObjectPosition().y );
 }
 
+//wykrywanie kolizji miedzy graczze a potowrem
 bool Enemy::checkPosition(Position position) {
 
     if(position.x +32 >= this->objectPosition.x && position.x <= this->objectPosition.x + 32
         &&
         position.y + 32 >= this->objectPosition.y && position.y <= this->objectPosition.y + 32)
-        return true; //dokladniejsze wykrywanie kolizji
+        return true;
     else
         return false;
 }
 
+//ustawia potwora na zadanej pozycji (oraz jego teksture)
 void Enemy::setEnemyPosition(float newXPosition, float newYPosition) {
 
         this->setObjectPosition(newXPosition, newYPosition);
@@ -34,16 +36,14 @@ void Enemy::setEnemyPosition(float newXPosition, float newYPosition) {
 
 }
 
-
+//funkcja wczytuje potowry z pliku oraz wczytuje ich teksture
 void Monsters::loadOgrs(string fileOgrsPosition, string fileTextureOgr) {
 
     //ustawiam respawn wszystkich ogrow na 8 sekund
     this->ogrRespawnTime = sf::seconds(5); 
 
-
     //wczytuje texture ogra z pliku
     this->ogrTexture.loadFromFile("data/textures/" + fileTextureOgr);
-
 
     //otwieram plik ze startowymi pozycjami ogrow
     FILE* ogrFile;
@@ -69,14 +69,16 @@ void Monsters::loadOgrs(string fileOgrsPosition, string fileTextureOgr) {
     }
 }
 
+//funkcja rysujaca zywe ogry
 void Monsters::drawOgrs(sf::RenderWindow& window) {
 
-    //trzeba dorobic sprawdzanie czy dead i mechanizm respawnu
-        for(size_t i = 0; i < ogrs.size(); ++i)
+    for(size_t i = 0; i < ogrs.size(); ++i)
+        if(ogrs[i].checkEnemyDeadFlag() == 0 )
             window.draw(ogrs[i]);
 
 }
 
+//przeszukuje vector ogrow i sprawdza czy jest jakis na zadanej pozycji, jesli tak to zwraca go, jesli nie to zwraca NULL
 Enemy* Monsters::getMonsterOnPosition(Position position) {
 
     for(size_t i = 0; i < ogrs.size(); ++i)
@@ -136,14 +138,24 @@ Enemy* Monsters::getMonsterOnAtackArea(Position playerPosition, int attackDirect
     return NULL;
 }
 
-void Monsters::updateDeadMonsters(sf::Time mainClockTime) {
+//funkcja aktualizuje potwory - usmierca te co maja < 0 HP, daje exp dla gracza za zabicie potowra, respawnuje potwory
+void Monsters::updateDeadMonsters(sf::Time mainClockTime, Player& player) {
 
-
+    //usmiercanie mobka
     for(size_t i = 0; i < ogrs.size(); ++i)
         if(ogrs[i].getEnemyHP() <= 0 && ogrs[i].checkEnemyDeadFlag() == 0) {
             ogrs[i].setEnemyPosition(-40, -40);
             ogrs[i].setEnemyDeadFlag(1);
             ogrs[i].setDeathTime(mainClockTime);
+
+
+            player.setPlayerExp(player.getPlayerExp() + this->ogrExp );
+
+            if(player.getPlayerExp() >= player.getPlayerLvl() * 100) {
+                player.setPlayerLvl(player.getPlayerLvl() + 1);
+                player.setPlayerExp(0);
+                
+            }
         }
 
 
@@ -157,5 +169,26 @@ void Monsters::updateDeadMonsters(sf::Time mainClockTime) {
                 ogrs[i].setEnemyDeadFlag(0);
                 ogrs[i].setEnemyHP(ogrs[i].getEnemyStartHP());
             }
+        }
+}
+
+
+//funkcja rysujaca nad potoworami ich paski HP
+void Monsters::drawMonstersHP(sf::RenderWindow& window) {
+
+    sf::RectangleShape lineHP;
+
+    for(size_t i = 0; i < ogrs.size(); ++i)
+        if(ogrs[i].checkEnemyDeadFlag() == 0) {
+
+            lineHP.setSize(sf::Vector2f(32, 3));
+            lineHP.setFillColor(sf::Color(0, 0, 0));
+            lineHP.setPosition(sf::Vector2f(ogrs[i].getObjectPosition().x, ogrs[i].getObjectPosition().y));
+            window.draw(lineHP);
+
+            lineHP.setSize(sf::Vector2f(32 * ogrs[i].getEnemyHP() / ogrs[i].getEnemyStartHP(), 3));
+            lineHP.setFillColor(sf::Color(255, 0, 0));
+            window.draw(lineHP);
+
         }
 }

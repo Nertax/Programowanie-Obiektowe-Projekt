@@ -2,13 +2,11 @@
 
 using namespace std;
 
-
 int main()
 {
-     
+    //uruchamiamy glowna petle gry
     Game mojaGra;
-    mojaGra.runGame();//ASDASAD
-
+    mojaGra.runGame();
 
     return 0;
 }

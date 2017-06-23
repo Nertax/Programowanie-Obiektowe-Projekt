@@ -15,7 +15,7 @@ class Map : public sf::Drawable {
     sf::VertexArray mapVertices;
     sf::Texture tileSet;
 
-    //ta funkcja konieczna, znaleziona w tutorialach do sfmla
+    //ta funkcja potrzebna do wyswietlania mapy z glownej petli
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const {
         states.texture = &tileSet;
         target.draw(mapVertices, states);
@@ -23,6 +23,8 @@ class Map : public sf::Drawable {
 
 public:
 
+
+//funkcja wczytuje mape z pliku
 void loadMap(string fileMap, string fileTextureMap, sf::Vector2u tileSize);
 
 

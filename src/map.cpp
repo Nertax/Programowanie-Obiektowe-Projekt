@@ -1,5 +1,7 @@
 #include "map.h"
 
+
+//funkcja wczytuje mape z pliku
 void Map::loadMap(string fileMap, string fileTextureMap, sf::Vector2u tileSize) {
 
     //otwieramy nasz plik z danymi do mapy

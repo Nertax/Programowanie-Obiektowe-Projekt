@@ -1,28 +1,28 @@
 #include "obstacle.h"
 
+//wykrywa kolizje miedzy pozycja tej przeszkody, a zadana pozycja position, jesli jest kolizja zwraca true, jesli nie false
+bool Obstacle::checkPosition(Position position) {
 
-    bool Obstacle::checkPosition(Position position) {
+    if(position.x +32 >= this->objectPosition.x && position.x <= this->objectPosition.x + 32
+        &&
+        position.y + 32 >= this->objectPosition.y && position.y <= this->objectPosition.y + 32)
+        return true; 
+    else
+        return false;
+}
 
-        if(position.x +32 >= this->objectPosition.x && position.x <= this->objectPosition.x + 32
-           &&
-           position.y + 32 >= this->objectPosition.y && position.y <= this->objectPosition.y + 32)
-            return true; //dokladniejsze wykrywanie kolizji
-        else
-            return false;
-    }
+//funkcja przeszukuje caly vector przeszkod w poszukiwaniu czy istnieje przeszkoda na zadanej pozycji, jeśli tak to ja zwraca, jesli nie to zwraca NULL
+Obstacle* Obstacles::getObstacleOnPosition(Position position) {
+
+    for(size_t i = 0; i < obstaclesVector.size(); ++i)
+        if(obstaclesVector[i].checkPosition(position))
+            return &obstaclesVector[i];
+
+    return NULL;
+}
 
 
-    Obstacle* Obstacles::getObstacleOnPosition(Position position) {
-
-        for(size_t i = 0; i < obstaclesVector.size(); ++i)
-            if(obstaclesVector[i].checkPosition(position))
-                return &obstaclesVector[i];
-
-        return NULL;
-
-
-    }
-
+//funkcja wczytuje z pliku teksture przeszkod oraz wczytuje przeszkody do vectora i przetwarza je (tak jak w Map)
 void Obstacles::loadObstacles(string fileObstacles, string fileTextureObstcles, sf::Vector2u textureSize) {
 
     //otwieramy nasz plik z danymi do mapy
@@ -39,14 +39,10 @@ void Obstacles::loadObstacles(string fileObstacles, string fileTextureObstcles, 
     obstaclesVertices.setPrimitiveType(sf::Quads);
     obstaclesVertices.resize(obstaclesCount * 4);
 
-    //tworzymy nasza macierz kafelkow o odpowiednim rozmiarze
-  //  tileMatrix = new unsigned int [mapWidth * mapHeight];
-
     //wczytujemy do vectora przeszkod nasze przeszkody
-        Position tempPosition;
-        int tempInt;
-        Obstacle tempObstacle(-1);
-
+    Position tempPosition;
+    int tempInt;
+    Obstacle tempObstacle(-1);
 
     for(size_t i = 0; i < obstaclesCount; ++i) {
         fscanf(obstacleFile, "%d %f %f", &tempInt, &tempPosition.x, &tempPosition.y);
@@ -55,8 +51,6 @@ void Obstacles::loadObstacles(string fileObstacles, string fileTextureObstcles, 
 
         obstaclesVector.push_back(tempObstacle);
     }
-
-        
 
     
     for (size_t i = 0; i < obstaclesVector.size(); ++i) {

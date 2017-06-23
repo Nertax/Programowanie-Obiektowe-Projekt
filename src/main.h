@@ -7,6 +7,7 @@ struct Position {
     float y;
 };
 
+//aktywne kierunki ruchu gracza
 struct ActiveDirection {
     bool up;
     bool left;
@@ -24,6 +25,5 @@ public:
     void setObjectPosition(float newXPosition, float newYPosition) { this->objectPosition.x = newXPosition; this->objectPosition.y = newYPosition; }
  
 };
-
 
 #endif
